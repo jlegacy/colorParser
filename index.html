@@ -9,22 +9,23 @@
     </style>
   </head>
   <body>
-    <canvas id="myCanvas" width="1200" height="850"></canvas>
+    <canvas id="myCanvas" width="400" height="400"></canvas>
 	<video id="video" width="640" height="480" autoplay></video>
 	<button id="snap">Snap Photo</button>
 	<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
+	<script src="js/color_classifier.js"></script>
+	<script src="js/dataset.js"></script>
     <script>
       
               $(document).ready(function () {
+			  
+			  
+			  window.classifier = new ColorClassifier();
+			  
 
-          function drawImage(imageObj) {
-              unalteredQR();
-
-              getYellowQR();
-              getCyanQR();
-              getMagentaQR();
-          }
-
+			  	window.classifier.learn(window.classifier.data);
+			
+			  
           var errorFactor = 75;
 
           var colors = {};
@@ -37,32 +38,198 @@
           colors.blue = "0,0,255"
           colors.purple = "0,0,255"
           colors.white = "255,255,255"
+		  
+		  
+		 function findBoxes()
+		 {
+		 var x = 69;
+              var y = 50;
+		  var canvas = document.getElementById('myCanvas');
+          var context = canvas.getContext('2d');
+			  
+		    var imageData = context.getImageData(x, y, imageObj.width, imageObj.height);
+              var data = imageData.data;
+				var count = 0;
+				console.log(imageObj.height);
+				console.log(imageObj.width);
+				
+              // Find Box Corner Pass left to right horizontally
+              for (var i = 0; i < data.length; i += 4) {
+			     var aData = [];
+                  aData.push(data[i]);
+                  aData.push(data[i + 1]);
+                  aData.push(data[i + 2]);
+				  
+				  
+                  if (checkColor(aData, 'black')) {
+                      data[i] = 255;
+                      data[i + 1] = 0;
+                      data[i + 2] = 0;
+                      context.putImageData(imageData, x, y); 
+					  ++count;
+					  
+					  if (count === 1)
+					  {
+					  break;
+					  }
+                  }
+
+              }
+			   
+			   count = 0;
+			   var found = false;
+			   
+			   // Find Box Corner Pass right to left vertically
+			   for (var z = data.length; z >= 1; z -= 4) {
+			   ++count;
+			   if (found)
+					{
+					break;
+					} 
+			   data[z] = 255;
+			   			data[z + 1] = 0;
+			   			data[z + 2] = 0;
+			   			context.putImageData(imageData, x, y);
+					
+			   for (var i = z; i > 0; i -= 1036) {
+			   		var aData = [];
+			   		aData.push(data[i]);
+			   		aData.push(data[i + 1]);
+			   		aData.push(data[i + 2]);
+
+			   		if (checkColor(aData, 'black')) {
+			   			data[i] = 255;
+			   			data[i + 1] = 0;
+			   			data[i + 2] = 0;
+			   			context.putImageData(imageData, x, y);
+			   			++count;
+
+			   			
+			   		}
+					
+					if (count === 2) {
+			   				found = true;
+							break;
+			   			}
+
+			   	}
+			   } 
+		 }
+		  
+		  
+		  
+		  
+          function drawImage(imageObj) {
+              unalteredQR();
+			  findBoxes();
+
+        //      getYellowQR();
+        //      getCyanQR();
+        //      getMagentaQR();
+          }
+
+		  
+		  function componentToHex(c) {
+		  	var hex = c.toString(16);
+		  	return hex.length == 1 ? "0" + hex : hex;
+		  }
+
+		  function rgbToHex(r, g, b) {
+		  	return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+		  }
 
           function checkRuleColor(data, color) {
-              console.log(data);
-              var aColor = [];
-              switch (color) {
-                  case 'black':
-                      if ((data[0] < 55 && data[1] < 50 && data[2] < 50 ) && (data[0] >= data[1]) && data[2] < 37) 
-                      {
-                         return true;  
-                      }
-                      break;
-                      
-                 /* case 'green':
-                      if ((data[1] > data[0] && data[2] > data[0]) && (data[0] <= data[1]))
-                      {
-                         return true; 
-                      }
-                      break;
+            var hexValue = rgbToHex(data[0], data[1], data[2]);
+			result_name = window.classifier.classify(hexValue);
+			
+          	switch (color) {
+          	case 'black':
+          		if (result_name === 'Seal brown'
+				|| result_name === 'Smoky black'
+				|| result_name === 'Zinnwaldite brown'
+				|| result_name === 'Onyx'
+				|| result_name === 'Black'
+				|| result_name === 'Bistre')  {
+          			return true;
+          		}
+				break;
+				
+          	case 'white':
+          		if (result_name === 'White'
+				|| result_name === 'Pale silver'
+				|| result_name === 'Ash grey'
+				|| result_name === 'Dark gray'
+				|| result_name === 'gray'
+				|| result_name === 'Grullo'
+				|| result_name === 'Khaki (HTML/CSS) (Khaki)'
+				|| result_name === 'Wenge'
+				|| result_name === 'Pastel brown'
+				|| result_name === 'Cinereous'
+				|| result_name === 'Shadow'
+				|| result_name === 'Beaver'
+				|| result_name === 'Raw umber'
+				|| result_name === 'Pale taupe'
+				|| result_name === 'Pastel gray'
+				|| result_name === 'Camel'
+				|| result_name === 'Laurel green'
+				|| result_name === 'Manatee'
+				|| result_name === 'Tan')  {
+          			return true;
+          		}
+				break;
+				
+					case 'blue':
+          		if (result_name === 'Blue'
+				|| result_name === "Payne's grey"
+				|| result_name === "Davy's grey"
+				|| result_name === 'Dark electric blue'
+				|| result_name === 'Dark electric blue'
+				|| result_name === 'Dark slate blue'
+				|| result_name === 'Cadet'
+				|| result_name === 'Charcoal'
+				|| result_name === 'custom blue1'
+				|| result_name === 'Blue'
+				|| result_name === 'Blue'
+				|| result_name === 'Blue'
+				|| result_name === 'Blue'
+				|| result_name === 'Blue'
+				|| result_name === 'Blue'
+				|| result_name === 'Blue'
+				|| result_name === 'Blue'
+				|| result_name === 'Blue'
+				|| result_name === 'Blue')  {
+          			return true;
+          		}
+				break;
+				
+					case 'red':
+          		if (result_name === 'Red'
+				|| result_name === "Deep chestnut"
+				
+				
+			
+				
+				|| result_name === 'custom red1'
+				|| result_name === 'custom red2'
+				
+				
+				
+			
+				|| result_name === 'Red'
+				|| result_name === 'Red'
+				|| result_name === 'Red'
+				|| result_name === 'Red'
+				|| result_name === 'Red'
+				|| result_name === 'Red'
+				|| result_name === 'Red'
+				|| result_name === 'Red')  {
+          			return true;
+          		}
+				break;
 
-                  default:
-                  break; */
-              }
-              
-                           
-              return false;
+          		return false;
 
+          	}
           }
 
           function checkColor(data, color) {
@@ -200,7 +367,7 @@
                   if ((data[i] <= 50) && (data[i + 1] <= 50) && (data[i + 2] <= 50)) {
                       found = true;
                   }
-
+F
                   //If not found set to white
                   if (found == false) {
                       data[i] = 255;
@@ -297,7 +464,7 @@
               var data = imageData.data;
 
               // Replace Blacks
-              for (var i = 0; i < data.length; i += 4) {
+             /* for (var i = 0; i < data.length; i += 4) {
 
                   var aData = [];
                   aData.push(data[i]);
@@ -305,13 +472,75 @@
                   aData.push(data[i + 2]);
 
                   if (checkRuleColor(aData, 'black')) {
-                      data[i] = 255;
+                      data[i] = 0;
                       data[i + 1] = 0;
                       data[i + 2] = 0;
-                     context.putImageData(imageData, x, y);    
+                      context.putImageData(imageData, x, y);    
                   }
 
               }
+			  
+			  imageData = context.getImageData(x, y, imageObj.width, imageObj.height);
+              data = imageData.data;
+			  
+			    // Replace Whites
+              for (var i = 0; i < data.length; i += 4) {
+
+                  var aData = [];
+                  aData.push(data[i]);
+                  aData.push(data[i + 1]);
+                  aData.push(data[i + 2]);
+
+                  if (checkRuleColor(aData, 'white')) {
+                      data[i] = 255;
+                      data[i + 1] = 255;
+                      data[i + 2] = 255;
+                 //     context.putImageData(imageData, x, y);    
+                  }
+
+              } 
+			  
+			  imageData = context.getImageData(x, y, imageObj.width, imageObj.height);
+              data = imageData.data;
+			  
+			    // Replace Blue
+              for (var i = 0; i < data.length; i += 4) {
+
+                  var aData = [];
+                  aData.push(data[i]);
+                  aData.push(data[i + 1]);
+                  aData.push(data[i + 2]);
+
+                  if (checkRuleColor(aData, 'blue')) {
+                      data[i] = 0;
+                      data[i + 1] = 0;
+                      data[i + 2] = 255;
+                    //  context.putImageData(imageData, x, y);    
+                  }
+
+              } 
+			   
+			  imageData = context.getImageData(x, y, imageObj.width, imageObj.height);
+              data = imageData.data;
+			  
+			     // Replace Red
+              for (var i = 0; i < data.length; i += 4) {
+
+                  var aData = [];
+                  aData.push(data[i]);
+                  aData.push(data[i + 1]);
+                  aData.push(data[i + 2]);
+
+                  if (checkRuleColor(aData, 'red')) {
+                      data[i] = 255;
+                      data[i + 1] = 0;
+                      data[i + 2] = 0;
+                      context.putImageData(imageData, x, y);    
+                  }
+
+              } 
+			  
+			  */
 
               // overwrite original image
             
