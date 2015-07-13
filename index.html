@@ -80,7 +80,7 @@
 			   var found = false;
 			   
 			   // Find Box Corner Pass right to left vertically
-			   for (var z = data.length; z >= 1; z -= 4) {
+			   for (var z = data.length; z > 0; z -= 4) {
 			   ++count;
 			   if (found)
 					{
@@ -103,11 +103,9 @@
 			   			data[i + 2] = 0;
 			   			context.putImageData(imageData, x, y);
 			   			++count;
-
-			   			
 			   		}
 					
-					if (count === 2) {
+					if (count === 25) {
 			   				found = true;
 							break;
 			   			}
